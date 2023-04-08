@@ -1,0 +1,21 @@
+import dnnlib
+import dnnlib.tflib as tflib
+import numpy as np
+from PIL import Image
+
+# Cargar el modelo pre-entrenado de StyleGAN
+tflib.init_tf()
+with dnnlib.util.open_url('https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada/models/pretrained/ffhq.pkl') as f:
+    generator_network, discriminator_network, Gs_network = pickle.load(f)
+
+# Definir la descripción del personaje
+description = "Chamber, el agente de Valorant, está posando para una foto en el centro de un salón de entrenamiento futurista. Está vestido con un traje de combate oscuro con detalles rojos y blancos, y lleva un casco que cubre su cabeza y parte de su rostro. Tiene una pose segura y decidida, con su arma de alta tecnología apuntando hacia abajo en su mano derecha. En el fondo, hay una pared metálica con luces de neón rojas y un reflejo de su figura en el suelo pulido."
+
+# Convertir la descripción en una matriz de vectores
+latent_vectors = Gs_network.input_shape[1:]
+description_vectors = np.random.RandomState(123).randn(1, *latent_vectors[1:])
+description_vectors[:, :description.shape[0]] = description
+
+# Generar la imagen con StyleGAN
+images = Gs_network.run(description_vectors, None, truncation_psi=0.7, randomize_noise=True, output_transform=dict(func=tflib.convert_images_to_uint8, nchw_to_nhwc=True))
+Image.fromarray(images[0]).show()
